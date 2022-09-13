@@ -10,7 +10,7 @@ import scala.io.Source
 
 
 object Main extends App{
-print("Hello World")
+//print(CSVParser.parseString("a,b,c\nd,e,f", CSVParser.Config.default))
 
 }
 

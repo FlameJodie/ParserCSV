@@ -1,4 +1,5 @@
 
+import scala.:+
 import scala.annotation.tailrec
 import scala.collection.mutable
 //import scala.collection.IterableOnce.iterableOnceExtensionMethodsimport scala.collection.immutable
@@ -44,12 +45,14 @@ object CSVParser {
       case (true, rest) => parse0(rest, Nil :: acc)
       case (false, current :: rest) => current match {
         case cfg.`fieldDelimiter` => acc match {
-          case line :: lines => parse0(rest, (Vector()::line)::lines)
+          case line :: lines
+          => parse0(rest, (Vector()::line)::lines)
           case Nil => parse0(rest, List(List(Vector())))
         }
         case x => acc match {
           case line :: lines => line match {
-             case field :: fileds => parse0(rest, List(field.appended(x)) :: lines)
+             case field :: fields =>
+               parse0(rest, (field.appended(x) :: fields) :: lines)
              case Nil => parse0(rest, List(Vector(x)) :: lines)
           }
           case Nil => parse0( rest, List(List(Vector(x))))
