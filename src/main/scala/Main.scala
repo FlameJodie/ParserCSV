@@ -10,7 +10,7 @@ import scala.io.Source
 
 
 object Main extends App{
-//print(CSVParser.parseString("a,b,c\nd,e,f", CSVParser.Config.default))
+print(CSVParser.parseString(Source.fromFile("lead_shot.csv").mkString, CSVParser.Config.default), "\n")
 
 }
 

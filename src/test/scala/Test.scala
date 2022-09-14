@@ -70,17 +70,16 @@ class CSVTest extends AnyFunSuite {
 
     assert(CSVParser.parseString(in, CSVParser.Config.default) == Left(CSVParser.Error("",1,1)))
   }*/
-/*
   test("escape") {
-    val in =
-      """"aaa","b
-      |bb","ccc"
-      |zzz,yyy,xxx""".stripMargin
-    val expected = CSVParser.Csv(List(Vector("aaa", "b\nbb", "ccc"), Vector("zzz", "yyy", "xxx")))
+    val in = List(
+      List("aaa".e, "b \nbb".e, "ccc".e),
+      List("zzz", "yyy", "xxx")
+    ).map(_.mkString(",")).mkString("\n\r")
+
+    val expected = CSVParser.Csv(List(Vector("aaa", "b \nbb", "ccc"), Vector("zzz", "yyy", "xxx")))
 
     assert(CSVParser.parseString(in, CSVParser.Config.default.copy(linesDelimiter = ('\n', Some('\r')))) == Right(expected))
   }
-*/
 
 
 
