@@ -18,6 +18,7 @@ object CSVParserr {
 
 
   def readCSV(path: String, isHeader: Boolean): ReturnType = {
+
     isMultiline = false
     val lines = scala.io.Source.fromFile(path).getLines().toVector
     if (isHeader) {

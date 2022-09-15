@@ -10,7 +10,12 @@ import scala.io.Source
 
 
 object Main extends App{
-print(CSVParser.parseString(Source.fromFile("lead_shot.csv").mkString, CSVParser.Config.default), "\n")
+  CSVParser.parseWithHeader(Source.fromFile("biostats.csv").mkString, CSVParser.Config.default) match {
+    case Right(list) => print(list.captions + "\n" + list.csv.rows.mkString("\n"));
+      println(list.getByName(1,"Name"));
+      println(list.captions.get("Name"))
+    case Left(error) => print(error)
+  }
 
 }
 
