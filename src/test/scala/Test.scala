@@ -1,3 +1,4 @@
+import CSVParser.{Csv, CsvWithCaptions}
 import org.scalatest.{Assertions, Ignore}
 import org.scalatest.Assertions.assert
 import org.scalatest.funsuite.AnyFunSuite
@@ -80,15 +81,6 @@ class CSVTest extends AnyFunSuite {
 
     assert(CSVParser.parseString(in, CSVParser.Config.default.copy(linesDelimiter = ('\n', Some('\r')))) == Right(expected))
   }
-
-
-
-
-
-
-
-
-
 
 
 }

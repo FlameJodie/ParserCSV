@@ -9,9 +9,9 @@ object CSVParser {
 
   final case class Error(msg: String, lineNumber: Int, pos: Int)
 
-  final case class Csv(
-                        rows: List[Vector[String]]
-                      )
+  final case class Csv(rows: List[Vector[String]]) extends AnyVal
+
+  final case class CsvWithCaptions(list: List[RowWithCaption])
 
   final case class Config(
                            fieldDelimiter: Char,
@@ -25,26 +25,20 @@ object CSVParser {
       }
     }
   }
+  
 
-
-  final case class CsvWithCaptions(captions: Map[String, Int], csv: Csv)
-
-
-  implicit class finder(csvWithCaptions: CsvWithCaptions) {
-
-    def getByName(line: Int, name: String): Either[String, String] = {
-      csvWithCaptions.captions.get(name) match {
-        case Some(n) =>
-          Right(csvWithCaptions.csv.rows match {
-            case List() => return Left("looks like there are only headers")
-            case list => list(line)(n)
-
-          })
-        case None => Left(s"there is no column $name")
+  case class RowWithCaption(captions: Map[String, Int], row: Vector[String]) {
+    def get(name: String): Either[String, String] = RowWithCaptions.getByName(this, name)
+  }
+  
+  object RowWithCaptions {
+    def getByName(rowWithCaptions: RowWithCaption, name: String): Either[String, String] = {
+      rowWithCaptions.captions.get(name).toRight(s"there is no column $name").flatMap {
+        n => rowWithCaptions.row.lift(n).toRight(s"no such index $n")
       }
-
     }
   }
+
 
   object Config {
     def default: Config = Config(',', ('\n', None), '"')
@@ -54,15 +48,18 @@ object CSVParser {
     parse(in.toCharArray.toList, cfg)
   }
 
-  def parseWithHeader(in:String, cfg: Config): Either[Error, CsvWithCaptions] = {
-    parse(in.toCharArray.toList, cfg) match {
-      case Right(list) => list.rows match {
-        case x :: tail => Right(CsvWithCaptions(x.zipWithIndex.toMap, Csv(tail)))
-        case Nil => Left(Error("empty csv", 0, 0))
-      }
-      case Left(err) => Left(err)
+  def parseWithHeader(in: String, cfg: Config): Either[Error, CsvWithCaptions] =
+    parse(in.toCharArray.toList, cfg).map {
+      list =>
+        list.rows match {
+          case x :: tail => {
+            val captions = x.zipWithIndex.toMap
+            CsvWithCaptions(tail.map(xs => RowWithCaption(captions, xs)))
+          }
+          case Nil => CsvWithCaptions(Nil)
+        }
+
     }
-     }
 
   def parse(in0: List[Char], cfg: Config): Either[Error, Csv] = {
     def isEol(in: List[Char]): (Boolean, List[Char]) = {
