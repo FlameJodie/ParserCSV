@@ -12,48 +12,6 @@ object Main extends App{
     }
   }
 
-  trait Functor[F[_]] {
-       def map[A, B](fa: F[A])(f: A => B): F[B]
-  }
-  object Functor {
-    def apply[F[_]](implicit f: Functor[F]): Functor[F] = f
-
-    implicit class Syntax[F[_]: Functor, A](fa: F[A]) {
-      def map[B](f: A => B): F[B] = Functor[F].map[A, B](fa)(f)
-    }
-  }
-  import Functor.Syntax
-
-  trait Monad[F[_]] extends Functor[F] {
-    def pure[A](a: A): F[A]
-    def flatMap[A, B](fa: F[A])(f: A => F[B]): F[B]
-  }
-  object Monad {
-    def apply[F[_]](implicit f: Monad[F]): Monad[F] = f
-
-    implicit class Syntax[F[_]: Monad, A](fa: F[A]) {
-      def flatMap[B](f: A => F[B]): F[B] = Monad[F].flatMap(fa)(f)
-    }
-  }
-  import Monad.Syntax
-
-  final case class EitherT[F[_]: Monad, A, B](value: F[Either[A, B]]) {
-    def flatMap[C](f: B => EitherT[F[_], A, C]): EitherT[F, A, C] =
-
-    EitherT(value.flatMap{
-      case Right(b) => f(b).value
-      case Left(e) => Monad[F].pure(Left(e))
-    })
-  }
-
- // def flatten[F[_], A](fa: F[F[A]]): F[A] = ???
-
- // def >>=[F[_], A, B](fa: F[A])(f: A => F[B]): F[B] = flatten(fmap(fa)(f))
-
-  case class Foo[A](a: A) {
-    def flatMap[B](f: A => Foo[B]): Foo[B] = >>=(this)(f)
-  }
-
   def traverse[F[_], G[_], A, B](fa: F[A])(f: A => G[B]): G[F[A]] = ???
 
   implicit class ListSyntax[A,B](list:List[A]){
