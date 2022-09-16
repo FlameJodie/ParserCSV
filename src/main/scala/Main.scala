@@ -4,12 +4,6 @@ import scala.util.Try
 
 
 object Main extends App{
-/*  CSVParser.parseWithHeader(Source.fromFile("biostats.csv").mkString, CSVParser.Config.default) match {
-    case Right(list) => println(list.captions + "\n" + list.csv.rows.mkString("\n"));
-      println(list.getByName(1,"Name"));
-      println(list.captions.get("Name"))
-    case Left(error) => print(error)
-  }*/
 
   implicit class EitherSytax[+A, +B](e: Either[A,B]) {
     def leftMap[C](f: A => C): Either[C, B] = e match {
@@ -18,11 +12,43 @@ object Main extends App{
     }
   }
 
-  def fmap[F[_], A, B](fa: F[A])(f: A => B): F[B] = ???
+  trait Functor[F[_]] {
+       def map[A, B](fa: F[A])(f: A => B): F[B]
+  }
+  object Functor {
+    def apply[F[_]](implicit f: Functor[F]): Functor[F] = f
 
-  def flatten[F[_], A](fa: F[F[A]]): F[A] = ???
+    implicit class Syntax[F[_]: Functor, A](fa: F[A]) {
+      def map[B](f: A => B): F[B] = Functor[F].map[A, B](fa)(f)
+    }
+  }
+  import Functor.Syntax
 
-  def >>=[F[_], A, B](fa: F[A])(f: A => F[B]): F[B] = flatten(fmap(fa)(f))
+  trait Monad[F[_]] extends Functor[F] {
+    def pure[A](a: A): F[A]
+    def flatMap[A, B](fa: F[A])(f: A => F[B]): F[B]
+  }
+  object Monad {
+    def apply[F[_]](implicit f: Monad[F]): Monad[F] = f
+
+    implicit class Syntax[F[_]: Monad, A](fa: F[A]) {
+      def flatMap[B](f: A => F[B]): F[B] = Monad[F].flatMap(fa)(f)
+    }
+  }
+  import Monad.Syntax
+
+  final case class EitherT[F[_]: Monad, A, B](value: F[Either[A, B]]) {
+    def flatMap[C](f: B => EitherT[F[_], A, C]): EitherT[F, A, C] =
+
+    EitherT(value.flatMap{
+      case Right(b) => f(b).value
+      case Left(e) => Monad[F].pure(Left(e))
+    })
+  }
+
+ // def flatten[F[_], A](fa: F[F[A]]): F[A] = ???
+
+ // def >>=[F[_], A, B](fa: F[A])(f: A => F[B]): F[B] = flatten(fmap(fa)(f))
 
   case class Foo[A](a: A) {
     def flatMap[B](f: A => Foo[B]): Foo[B] = >>=(this)(f)
@@ -31,7 +57,10 @@ object Main extends App{
   def traverse[F[_], G[_], A, B](fa: F[A])(f: A => G[B]): G[F[A]] = ???
 
   implicit class ListSyntax[A,B](list:List[A]){
-    def traverse(f: A => Either[String, B]): Either[String, List[B]] = ???
+    def traverse(f: A => Either[String, B]): Either[String, List[B]] =
+      list.foldRight[Either[String, List[B]]](Right(Nil)){
+        case (a,acc) => f(a).flatMap(b => acc.map(b::_))
+      }
   }
 
   import CSVParser._
@@ -61,9 +90,7 @@ object Main extends App{
     parseWithHeader(in,Config.default).leftMap(e => e.toString).flatMap(_.list.traverse(FooBar.decode))
   }
 
-
-  val in = "FOO,BAR\n1,true\2,false"
+  val in = "FOO,BAR\n1,true\n2,false"
 
   program(in).fold(e => throw new RuntimeException(e), println(_))
 }
-
